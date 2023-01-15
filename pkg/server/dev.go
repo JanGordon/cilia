@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var reloadIndicator = make(chan bool)
+var reloadIndicator = make(chan string)
 var upgrader = websocket.Upgrader{}
 var wConn = 0
 var reloadCount = 0
@@ -65,9 +65,17 @@ func fileWatcher() {
 				// fmt.Println(event.Name, event.Op)
 				if filepath.Ext(event.Name) != ".out" {
 					// if html only that should be reloaded on page (with js)
+					if filepath.Ext(event.Name) == ".html" {
+						ssr.Compile()
+						reloadIndicator <- "reloadhtml"
+						fmt.Println("Realoding html page")
 
-					ssr.Compile()
-					reloadIndicator <- true
+					} else {
+						fmt.Println("Realoding entire page")
+						ssr.Compile()
+						reloadIndicator <- "reload"
+					}
+
 				}
 				// dir, filename := filepath.Split(path)
 				// if filepath.Ext(path) == ".html" && filename != "out.html" {
@@ -100,9 +108,11 @@ func wsUpgrader(w http.ResponseWriter, r *http.Request) {
 	defer func() { wConn = 0 }()
 	// Continuosly read and write message
 	for {
-		if <-reloadIndicator {
+		r := <-reloadIndicator
+		if r == "reload" || r == "reloadhtml" {
 			// reloadIndicator <- false
-			message := []byte("reload")
+			message := []byte(r)
+			fmt.Println(r)
 			err = conn.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				log.Println("write failed:", err)
@@ -114,12 +124,14 @@ func wsUpgrader(w http.ResponseWriter, r *http.Request) {
 			}
 			if string(message) == "reload successful" {
 				reloadCount++
-				fmt.Printf("\033[0;0H")
+				// fmt.Printf("\033[0;0H")
 				fmt.Printf("built and reloaded successfully x%v\n", reloadCount)
 			} else {
 				fmt.Println("client reload failed")
 				break
 			}
+		} else {
+
 		}
 
 	}

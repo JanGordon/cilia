@@ -1,13 +1,22 @@
-const exampleSocket = new WebSocket("ws:localhost:8080/ws");
+const devSocket = new WebSocket("ws:localhost:8080/ws");
 
-exampleSocket.onopen = (event) => {
+devSocket.onopen = (event) => {
     console.log("connection opened")
 
 }
 
-exampleSocket.onmessage = (event) => {
+devSocket.onmessage = async (event) => {
     if (event.data == "reload") {
-        exampleSocket.send("reload successful");
+        devSocket.send("reload successful");
         window.location.reload();
+    } else if (event.data == "reloadhtml") {
+        devSocket.send("reload successful");
+        fetch(window.location.pathname)
+        .then(function (response) {
+            return response.text()
+        }).then(function (data) {
+            document.body.innerHTML = data
+            console.log("reloaded html", data)
+        })
     }
 }
