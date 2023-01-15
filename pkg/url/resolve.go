@@ -4,13 +4,30 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/JanGordon/cilia-framework/pkg/global"
 )
 
-func ResolveURL(url string) (string, error) {
+var reservedPaths = []string{
+	"/public",
+	"/components",
+	"/assets",
+}
+
+func ResolveURL(url string) string {
 	// takes a url and returns a path to the file relative the project root
 	// opposite of ResolvePath
-
-	return url, nil
+	for _, p := range reservedPaths {
+		if strings.HasPrefix(url, p) {
+			url = "/.." + url
+			break
+		}
+	}
+	url = "/routes" + url
+	if filepath.Ext(url) == "" {
+		url += "index.html.out"
+	}
+	return global.ProjectRoot + url
 }
 
 func ResolvePath(path string, locationPath string) (string, error) {

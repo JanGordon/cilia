@@ -9,6 +9,7 @@ import (
 
 	"github.com/JanGordon/cilia-framework/pkg/global"
 	"github.com/JanGordon/cilia-framework/pkg/ssr"
+	"github.com/JanGordon/cilia-framework/pkg/url"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/websocket"
 )
@@ -34,8 +35,9 @@ func Dev(port int) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	p := "." + r.URL.Path
-	http.ServeFile(w, r, p)
+	url := url.ResolveURL(r.URL.Path)
+	fmt.Printf("serving %v for %v\n", url, r.URL.Path)
+	http.ServeFile(w, r, url)
 }
 
 func fileWatcher() {
@@ -68,10 +70,7 @@ func fileWatcher() {
 					if filepath.Ext(event.Name) == ".html" {
 						ssr.Compile()
 						reloadIndicator <- "reloadhtml"
-						fmt.Println("Realoding html page")
-
 					} else {
-						fmt.Println("Realoding entire page")
 						ssr.Compile()
 						reloadIndicator <- "reload"
 					}
