@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Hi im b</h1>
-    <c></c>
-</body>
-</html>
+<script>
+    //use data
+    // this means that data can be nil because require isn't used
+    // the > means that data is synced between the componet and declaration doc
+</script>
+<h1>Hi im b ${data}</h1>
+<c></c>

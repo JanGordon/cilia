@@ -14,4 +14,5 @@ Cilia is desgined to be as quick as possible and deliver the best initial page l
 - css support
 - ssr js runner
 - custom api hooks with go
-- html only reloading (otherwise do full reload)
+
+somehow broke hot reload

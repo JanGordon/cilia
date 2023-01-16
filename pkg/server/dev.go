@@ -57,6 +57,7 @@ func fileWatcher() {
 	go func() {
 		defer close(done)
 		for {
+			fmt.Println("l")
 
 			select {
 			case event, ok := <-watcher.Events:
@@ -64,7 +65,7 @@ func fileWatcher() {
 					return
 				}
 
-				// fmt.Println(event.Name, event.Op)
+				fmt.Println(event.Name, event.Op)
 				if filepath.Ext(event.Name) != ".out" {
 					// if html only that should be reloaded on page (with js)
 					if filepath.Ext(event.Name) == ".html" {

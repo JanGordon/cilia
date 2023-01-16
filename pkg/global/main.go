@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/dlclark/regexp2"
+	"rogchap.com/v8go"
 )
 
 var ReservedNames = []string{
@@ -15,6 +16,8 @@ var ComponentMatcher = regexp2.MustCompile(".cell$", 0)
 var ComponentNameSolver = regexp2.MustCompile(`^.*(?=(\.cell))`, 0)
 
 var ProjectRoot, _ = os.Getwd()
+
+var ComponentContext = v8go.NewContext()
 
 // func ErrorCheck() {
 // 	if err != nil {

@@ -5,15 +5,11 @@
     <title>Document</title>
 </head>
 <body>
-    <c>
-    <button></button>
-    <b>
-    <h1>Hi im b</h1>
-    <!-- &lt;c&gt;&lt;/c&gt; -->
+    <b data="&#39;hello&#39;"><h1>Hi im b hello</h1>
+<c><button></button>
+    <!-- &lt;b&gt;&lt;/b&gt; -->
 
-</b>
-
-</c>
+</c></b>
     <!-- &lt;script src=&#34;/assets/g.pub&#34;&gt;&lt;/script&gt; -->
 
  </body></html>
