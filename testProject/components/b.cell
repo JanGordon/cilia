@@ -4,4 +4,7 @@
     // the > means that data is synced between the componet and declaration doc
 </script>
 <h1>Hi im b ${data}</h1>
+<script>
+    data = "edited"
+</script>
 <c></c>

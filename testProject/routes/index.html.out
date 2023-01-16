@@ -5,11 +5,18 @@
     <title>Document</title>
 </head>
 <body>
-    <b data="&#39;hello&#39;"><h1>Hi im b hello</h1>
+    <script>
+        let datavar = "This is in a variable"
+    </script>
+    <b data="datavar"><h1>Hi im b This is in a variable</h1>
+<script>
+    data = "edited"
+</script>
 <c><button></button>
-    <!-- &lt;b&gt;&lt;/b&gt; -->
-
-</c></b>
+    <!-- &lt;b&gt;&lt;/b&gt; --><button></button>
+    <!-- &lt;b&gt;&lt;/b&gt; --></c></b>
+    the names jeff 
     <!-- &lt;script src=&#34;/assets/g.pub&#34;&gt;&lt;/script&gt; -->
+    <script src="/test.js"></script>
 
  </body></html>

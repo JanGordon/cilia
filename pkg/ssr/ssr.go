@@ -34,8 +34,7 @@ func processPage(path string, d fs.DirEntry, err error) error {
 		domCtx, err := html.Parse(f)
 		newPage := page.Page{Js: page.JsContext{Path: path, Ctx: jsCtx}, Dom: page.DomContext{Node: domCtx}, TextContents: string(b), Path: path}
 		js.RunJS(&newPage)
-		newPage = *dom.AssembleDom(&newPage)
-
+		newPage = *dom.AssembleDom(&newPage, true)
 		writeFile, err := os.OpenFile(path+".out", os.O_WRONLY|os.O_CREATE, 0600)
 
 		child := newPage.Dom.Node.FirstChild

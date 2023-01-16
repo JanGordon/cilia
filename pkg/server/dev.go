@@ -36,7 +36,6 @@ func Dev(port int) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	url := url.ResolveURL(r.URL.Path)
-	fmt.Printf("serving %v for %v\n", url, r.URL.Path)
 	http.ServeFile(w, r, url)
 }
 
@@ -57,15 +56,12 @@ func fileWatcher() {
 	go func() {
 		defer close(done)
 		for {
-			fmt.Println("l")
 
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
-
-				fmt.Println(event.Name, event.Op)
 				if filepath.Ext(event.Name) != ".out" {
 					// if html only that should be reloaded on page (with js)
 					if filepath.Ext(event.Name) == ".html" {
