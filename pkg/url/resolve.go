@@ -25,7 +25,7 @@ func ResolveURL(url string) string {
 	}
 	url = "/routes" + url
 	if filepath.Ext(url) == "" {
-		url += "index.html.out"
+		url = filepath.Join(url, "index.html.out")
 	}
 	return global.ProjectRoot + url
 }

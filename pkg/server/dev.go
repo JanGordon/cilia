@@ -36,6 +36,7 @@ func Dev(port int) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	url := url.ResolveURL(r.URL.Path)
+	fmt.Println(url, r.URL.Path)
 	http.ServeFile(w, r, url)
 }
 
