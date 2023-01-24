@@ -47,6 +47,7 @@ func fileWatcher() {
 	}
 	filepath.WalkDir(global.ProjectRoot, func(path string, info fs.DirEntry, err error) error {
 		watcher.Add(path)
+
 		return nil
 	})
 	defer watcher.Close()
@@ -55,6 +56,7 @@ func fileWatcher() {
 
 	done := make(chan bool)
 	go func() {
+
 		defer close(done)
 		for {
 
@@ -63,6 +65,7 @@ func fileWatcher() {
 				if !ok {
 					return
 				}
+				fmt.Println(event)
 				if filepath.Ext(event.Name) != ".out" {
 					// if html only that should be reloaded on page (with js)
 					if filepath.Ext(event.Name) == ".html" {
@@ -91,6 +94,7 @@ func fileWatcher() {
 	}()
 
 	<-done
+
 }
 
 func wsUpgrader(w http.ResponseWriter, r *http.Request) {
