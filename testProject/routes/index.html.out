@@ -6,16 +6,17 @@
 </head>
 <body>
     <script>
-        let datavar = "c"
+        let datavar = "This is in a variable"
     </script>
-    <b data="datavar"><h1>Hi im b c</h1>
+    <b data="datavar"><h1>Hi im b This is in a variable</h1>
 <script>
     data = "edited"
 </script>
-&lt;c&gt;<!--c-->
 <c><button></button>
-    <!-- &lt;b&gt;&lt;/b&gt; --><button></button>
-    <!-- &lt;b&gt;&lt;/b&gt; --></c></b>
+    <!-- &lt;b&gt;&lt;/b&gt; -->
+    <a>elfelfelf</a><button></button>
+    <!-- &lt;b&gt;&lt;/b&gt; -->
+    <a>elfelf</a></c></b>
     the names jeff 
     <!-- &lt;script src=&#34;/assets/g.pub&#34;&gt;&lt;/script&gt; -->
     <script src="/test.js"></script>

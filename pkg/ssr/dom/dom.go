@@ -53,14 +53,8 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 
 					for _, attribute := range i.Attr {
 						fmt.Println("Running", attribute)
-						renderedAttribute, err := document.Js.Ctx.RunScript(fmt.Sprintf("%v", attribute.Val), "attrscript")
-						if err != nil {
-							attributes[attribute.Key] = ""
-
-						} else {
-							attributes[attribute.Key] = renderedAttribute.String()
-
-						}
+						renderedAttribute, _ := document.Js.Ctx.RunScript(fmt.Sprintf("%v", attribute.Val), "attrscript")
+						attributes[attribute.Key] = renderedAttribute.String()
 					}
 
 					argText := ""
@@ -94,15 +88,13 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 					if err != nil {
 						panic(err)
 					}
-					fmt.Println(componentHTML.String())
 					// need to rerun assemble dom to mkae sure all returned components are resolved
-
 					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: newComponent.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false)
 					for _, v := range page.GetAllDescendants(newDocument.Dom.Node) {
-						fmt.Println("nodes in compoentn: ", v.Data)
+						fmt.Println(v.Data)
 
 					}
-					fmt.Println("adding children")
+
 					for _, v := range page.GetChildren(newDocument.Dom.Node) {
 						v.Parent.RemoveChild(v)
 						fmt.Println("Adding ", v.Data)
