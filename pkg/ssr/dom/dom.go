@@ -21,7 +21,7 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 	if err != nil {
 		panic(err)
 	}
-	document.Dom.Node = newNode
+	document.Dom.Node = newNode.LastChild.LastChild
 	for _, i := range page.GetAllDescendants(document.Dom.Node) {
 		if i.Type == html.ElementNode {
 			for _, c := range component.Components {
@@ -58,7 +58,6 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 					attributes := make(map[string]string)
 
 					for _, attribute := range i.Attr {
-						fmt.Println("Running", attribute)
 						renderedAttribute, err := document.Js.Ctx.RunScript(fmt.Sprintf("%v", attribute.Val), "attrscript")
 						if err != nil {
 							attributes[attribute.Key] = ""
@@ -75,7 +74,6 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 						argText += fmt.Sprintf("%v:'%v',", arg, attributes[arg])
 						argDefinitions += fmt.Sprintf(",%v = args.%v", arg, arg)
 					}
-					fmt.Printf("args: %v\n", args)
 					funcName := strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
 					// before we run the generator we need to make sure there are no other components to have a genertor made for them
 					jsCtx := v8go.NewContext()
@@ -95,23 +93,16 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 					if err != nil {
 						panic(err)
 					}
-					fmt.Println(componentHTML)
-					newComponent, err := html.Parse(strings.NewReader(strings.TrimSpace(componentHTML.String())))
-					if err != nil {
-						panic(err)
-					}
-					fmt.Println(componentHTML.String())
+					// fmt.Println(componentHTML)
 					// need to rerun assemble dom to mkae sure all returned components are resolved
 
-					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: newComponent.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false)
-					for _, v := range page.GetAllDescendants(newDocument.Dom.Node) {
-						fmt.Println("nodes in compoentn: ", v.Data)
+					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers}, false)
+					// for _, v := range page.GetAllDescendants(newDocument.Dom.Node) {
+					// 	fmt.Println("nodes in compoentn: ", v.Data)
 
-					}
-					fmt.Println("adding children")
+					// }
 					for _, v := range page.GetChildren(newDocument.Dom.Node) {
 						v.Parent.RemoveChild(v)
-						fmt.Println("Adding ", v.Data)
 						i.AppendChild(v)
 
 					}

@@ -7,5 +7,11 @@
 <script>
     data = "edited"
 </script>
-<${data}></${data}>
-<c></c>
+<${data}>Beast</${data}>
+{>
+## Beast md
+- easy to put in html
+- quick
+- good for content management
+<}
+;

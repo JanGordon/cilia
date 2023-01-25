@@ -65,7 +65,7 @@ func fileWatcher() {
 				if !ok {
 					return
 				}
-				fmt.Println(event)
+				// fmt.Println(event)
 				if filepath.Ext(event.Name) != ".out" {
 					// if html only that should be reloaded on page (with js)
 					if filepath.Ext(event.Name) == ".html" {
