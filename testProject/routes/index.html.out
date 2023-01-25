@@ -1,24 +1,24 @@
-<!DOCTYPE html><html lang="en"><head>
-    <meta charset="UTF-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Document</title>
-</head>
-<body>
+
     <script>
-        let datavar = "This is in a variable"
+        let datavar = "c"
     </script>
-    <b data="datavar"><h1>Hi im b This is in a variable</h1>
+    <b data="datavar"><h1>Hi im b c</h1>
 <script>
     data = "edited"
 </script>
-<c><button></button>
-    <!-- &lt;b&gt;&lt;/b&gt; -->
-    <a>elfelfelf</a><button></button>
-    <!-- &lt;b&gt;&lt;/b&gt; -->
-    <a>elfelf</a></c></b>
+&lt;c&gt;Beast<!--c-->
+<md><h2>Beast md</h2>
+
+<ul>
+<li>easy to put in html</li>
+<li>quick</li>
+<li>good for content management</li>
+</ul>
+</md>
+;
+</b>
     the names jeff 
-    <!-- &lt;script src=&#34;/assets/g.pub&#34;&gt;&lt;/script&gt; -->
+    
     <script src="/test.js"></script>
 
- </body></html>
+   

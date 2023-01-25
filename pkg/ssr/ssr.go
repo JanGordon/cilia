@@ -29,10 +29,8 @@ func processPage(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			panic(err)
 		}
-		f, _ := os.Open(path)
 		jsCtx := v8go.NewContext()
-		domCtx, err := html.Parse(f)
-		newPage := page.Page{Js: page.JsContext{Path: path, Ctx: jsCtx}, Dom: page.DomContext{Node: domCtx}, TextContents: string(b), Path: path}
+		newPage := page.Page{Js: page.JsContext{Path: path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: string(b), Path: path}
 		js.RunJS(&newPage)
 		newPage = *dom.AssembleDom(&newPage, true)
 		writeFile, err := os.OpenFile(path+".out", os.O_WRONLY|os.O_CREATE, 0600)
