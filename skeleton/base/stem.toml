@@ -1,0 +1,9 @@
+Version = 0.1
+Name = 'cilia-project'
+DirectAddons = [
+    "https://github.com/JanGordon/cilia-addon-demo"
+]
+
+IndirectAddons = [
+
+]

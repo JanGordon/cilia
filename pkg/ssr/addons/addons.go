@@ -1,21 +1,38 @@
 package addons
 
-import "fmt"
+import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/JanGordon/cilia-framework/pkg/global"
+	"github.com/pelletier/go-toml/v2"
+	wasmer "github.com/wasmerio/wasmer-go/wasmer"
+)
 
 type Addon struct {
 	OpeningToken string
 	ClosingToken string
 	Name         string
 
-	ContentModifier func(string) string
+	ContentModifier []byte
 	PureSSR         bool
-	JS              string
 	Open            bool
 	StartIndex      int
 	Content         string
 }
 
+type ExternalAddonCfg struct {
+	OpeningToken string
+	ClosingToken string
+	Name         string
+	PureSSR      bool
+}
+
 var Addons []*Addon
+var store *wasmer.Store
 
 func initNewAddon(a *Addon) {
 	Addons = append(Addons, a)
@@ -43,7 +60,30 @@ func ReplaceAddons(page string) string {
 						t.Content = page[openTokens[i].StartIndex : c-1]
 						fmt.Println(openTokens[i].Content)
 
-						modifiedContent := t.ContentModifier(t.Content)
+						//wasm stuff
+						store := wasmer.NewStore(wasmer.NewEngine())
+						module, _ := wasmer.NewModule(store, t.ContentModifier)
+
+						wasiEnv, _ := wasmer.NewWasiStateBuilder("wasi-program").
+							// Choose according to your actual situation
+							// Argument("--foo").
+							// Environment("ABC", "DEF").
+							// MapDirectory("./", ".").
+							Finalize()
+						importObject, err := wasiEnv.GenerateImportObject(store, module)
+						check(err)
+
+						instance, err := wasmer.NewInstance(module, importObject)
+						check(err)
+
+						start, err := instance.Exports.GetWasiStartFunction()
+						check(err)
+						start()
+
+						modifier, err := instance.Exports.GetFunction("Modifier")
+						check(err)
+						modifiedContent, _ := modifier(t.Content)
+
 						page = page[:t.StartIndex-2] + fmt.Sprintf("<%v>%v</%v>", t.Name, modifiedContent, t.Name) + page[c+1:]
 						// need to know if it should be rerun or only ssr
 						// here, convert each token to js but dont run it.
@@ -55,4 +95,66 @@ func ReplaceAddons(page string) string {
 		}
 	}
 	return page
+}
+
+type config struct {
+	Version        float32
+	Name           string
+	DirectAddons   []string
+	IndirectAddons []string
+}
+
+func init() {
+
+	configFile, err := os.ReadFile(filepath.Join(global.ProjectRoot, "stem.toml"))
+	if err != nil {
+		panic(err)
+	}
+	var cfg config
+	err = toml.Unmarshal(configFile, &cfg)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(cfg.Name)
+	for _, directAddon := range cfg.DirectAddons {
+		resp1, err := http.Get(directAddon + "/raw/main/addon.wasm")
+		if err != nil {
+			panic(err)
+		}
+
+		resp2, err := http.Get(directAddon + "/raw/main/config.toml")
+		if err != nil {
+			panic(err)
+		}
+
+		wasmBytes, err := ioutil.ReadAll(resp1.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		identifier, err := ioutil.ReadAll(resp2.Body)
+		if err != nil {
+			panic(err)
+		}
+		var cfg ExternalAddonCfg
+		err = toml.Unmarshal(identifier, &cfg)
+		initNewAddon(&Addon{
+			OpeningToken:    cfg.OpeningToken,
+			ClosingToken:    cfg.ClosingToken,
+			Name:            cfg.Name,
+			ContentModifier: wasmBytes,
+			PureSSR:         cfg.PureSSR,
+			Open:            true,
+			StartIndex:      0,
+			Content:         "",
+		})
+		fmt.Println("initialized new addon:", cfg.Name)
+	}
+
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
