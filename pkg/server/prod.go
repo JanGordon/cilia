@@ -6,7 +6,6 @@ import (
 )
 
 func Prod(port int) {
-	go fileWatcher()
 	server := &http.Server{Addr: fmt.Sprintf(":%v", port)}
 	http.HandleFunc("/", handler)
 	done := make(chan bool)
