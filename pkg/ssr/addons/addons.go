@@ -2,13 +2,7 @@ package addons
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
 
-	"github.com/JanGordon/cilia-framework/pkg/global"
-	"github.com/pelletier/go-toml/v2"
 	wasmer "github.com/wasmerio/wasmer-go/wasmer"
 )
 
@@ -106,50 +100,50 @@ type config struct {
 
 func init() {
 
-	configFile, err := os.ReadFile(filepath.Join(global.ProjectRoot, "stem.toml"))
-	if err != nil {
-		panic(err)
-	}
-	var cfg config
-	err = toml.Unmarshal(configFile, &cfg)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(cfg.Name)
-	for _, directAddon := range cfg.DirectAddons {
-		resp1, err := http.Get(directAddon + "/raw/main/addon.wasm")
-		if err != nil {
-			panic(err)
-		}
+	// configFile, err := os.ReadFile(filepath.Join(global.ProjectRoot, "stem.toml"))
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// var cfg config
+	// err = toml.Unmarshal(configFile, &cfg)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(cfg.Name)
+	// for _, directAddon := range cfg.DirectAddons {
+	// 	resp1, err := http.Get(directAddon + "/raw/main/addon.wasm")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
 
-		resp2, err := http.Get(directAddon + "/raw/main/config.toml")
-		if err != nil {
-			panic(err)
-		}
+	// 	resp2, err := http.Get(directAddon + "/raw/main/config.toml")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
 
-		wasmBytes, err := ioutil.ReadAll(resp1.Body)
-		if err != nil {
-			panic(err)
-		}
+	// 	wasmBytes, err := ioutil.ReadAll(resp1.Body)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
 
-		identifier, err := ioutil.ReadAll(resp2.Body)
-		if err != nil {
-			panic(err)
-		}
-		var cfg ExternalAddonCfg
-		err = toml.Unmarshal(identifier, &cfg)
-		initNewAddon(&Addon{
-			OpeningToken:    cfg.OpeningToken,
-			ClosingToken:    cfg.ClosingToken,
-			Name:            cfg.Name,
-			ContentModifier: wasmBytes,
-			PureSSR:         cfg.PureSSR,
-			Open:            true,
-			StartIndex:      0,
-			Content:         "",
-		})
-		fmt.Println("initialized new addon:", cfg.Name)
-	}
+	// 	identifier, err := ioutil.ReadAll(resp2.Body)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	var cfg ExternalAddonCfg
+	// 	err = toml.Unmarshal(identifier, &cfg)
+	// 	initNewAddon(&Addon{
+	// 		OpeningToken:    cfg.OpeningToken,
+	// 		ClosingToken:    cfg.ClosingToken,
+	// 		Name:            cfg.Name,
+	// 		ContentModifier: wasmBytes,
+	// 		PureSSR:         cfg.PureSSR,
+	// 		Open:            true,
+	// 		StartIndex:      0,
+	// 		Content:         "",
+	// 	})
+	// 	fmt.Println("initialized new addon:", cfg.Name)
+	// }
 
 }
 
