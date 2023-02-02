@@ -10,7 +10,10 @@ func Prod(port int) {
 	http.HandleFunc("/", handler)
 	done := make(chan bool)
 	go func() {
-		server.ListenAndServe()
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
 	}()
 	fmt.Printf("ready to connect at http://localhost:%v\n", port)
 
