@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/JanGordon/cilia-framework/pkg/global"
@@ -25,6 +27,7 @@ func Dev(port int) {
 	http.HandleFunc("/ws", wsUpgrader)
 	http.HandleFunc("/", handler)
 	done := make(chan bool)
+	ssr.Compile(global.ProjectRoot, false, "")
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
@@ -39,8 +42,34 @@ func Dev(port int) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	url := url.ResolveURL(r.URL.Path)
-	fmt.Println(url, r.URL.Path)
+	fmt.Println("expain this", r.UserAgent())
+	isHTML, err := global.BuiltPageMatcher.MatchString(url)
+	if err != nil {
+		panic(err)
+	}
+	if isHTML {
+		fmt.Println("ssr happening")
+		ip, port, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+
+			fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
+		}
+
+		userIP := net.ParseIP(ip)
+		ssredDoc := ssr.Compile(filepath.Dir(url), true, userIP.String()+":"+port) //my compile more than neccecary
+		fmt.Println(ssredDoc[url].Path)
+
+		writeFile, err := os.OpenFile(ssredDoc[url].Path+".out", os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			panic(err)
+		}
+		writeFile.Write([]byte(ssredDoc[url].TextContents))
+		fmt.Println(ssredDoc)
+	}
 	http.ServeFile(w, r, url)
+
+	fmt.Println("ssr done")
 }
 
 func fileWatcher() {
@@ -71,13 +100,13 @@ func fileWatcher() {
 				// fmt.Println(event)
 				if filepath.Ext(event.Name) != ".out" {
 					// if html only that should be reloaded on page (with js)
-					if filepath.Ext(event.Name) == ".html" {
-						ssr.Compile()
-						reloadIndicator <- "reloadhtml"
-					} else {
-						ssr.Compile()
-						reloadIndicator <- "reload"
-					}
+					// if filepath.Ext(event.Name) == ".html" {
+					// 	ssr.Compile()
+					// 	reloadIndicator <- "reload" //temporarliy disable html reload
+					// } else {
+					ssr.Compile(global.ProjectRoot, false, "")
+					reloadIndicator <- "reload"
+					// }
 
 				}
 				// dir, filename := filepath.Split(path)

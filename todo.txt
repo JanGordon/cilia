@@ -1,0 +1,9 @@
+instead of building to html.out, cilia build should build the entire binary of the app.
+> when running the server, the pages should be built initially and then stored in AllPages
+> on request the prebuilt page shoud have ssr only parts found and built (this can include addons)
+> 
+
+recursion may be because of passing http/Reuqest around
+
+in routes/api, go files can be placed to handle request and have access to a global map which can save seesions and other thigns required by js.
+this global object is also available in the js only when serve side rendering

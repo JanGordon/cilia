@@ -15,8 +15,8 @@ import (
 	"rogchap.com/v8go"
 )
 
-func AssembleDom(document *page.Page, root bool) *page.Page {
-	document.TextContents = addons.ReplaceAddons(document.TextContents)
+func AssembleDom(document *page.Page, root bool, ssr bool) *page.Page {
+	document.TextContents = addons.ReplaceAddons(document.TextContents, *document.Js.Ctx, ssr)
 	newNode, err := html.Parse(strings.NewReader(document.TextContents))
 	if err != nil {
 		panic(err)
@@ -25,6 +25,12 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 	for _, i := range page.GetAllDescendants(document.Dom.Node) {
 		if i.Type == html.ElementNode {
 			for _, c := range component.Components {
+				if hasAttribute("ssr", "", i) {
+					if !ssr {
+						continue
+					}
+					// this means it shouldnt be built as it is build
+				}
 				if c.Label == i.Data {
 					c.AllUsers = append(c.AllUsers, document.Path)
 					c.AllUsers = append(c.AllUsers, document.AllUsers...)
@@ -77,7 +83,7 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 					funcName := strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
 					// before we run the generator we need to make sure there are no other components to have a genertor made for them
 					jsCtx := v8go.NewContext()
-					newDocument := AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nodes.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false)
+					newDocument := AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nodes.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false, ssr)
 
 					// we need to render the output as a string to pass to the js:
 					var bytesOfComponent = bytes.NewBuffer([]byte{})
@@ -96,7 +102,7 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 					// fmt.Println(componentHTML)
 					// need to rerun assemble dom to mkae sure all returned components are resolved
 
-					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers}, false)
+					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers}, false, ssr)
 					// for _, v := range page.GetAllDescendants(newDocument.Dom.Node) {
 					// 	fmt.Println("nodes in compoentn: ", v.Data)
 
@@ -118,6 +124,15 @@ func AssembleDom(document *page.Page, root bool) *page.Page {
 func stringInSlice(s string, slice []string) bool {
 	for _, v := range slice {
 		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+func hasAttribute(attr string, val string, node *html.Node) bool {
+	for _, v := range node.Attr {
+		if attr == v.Key && val == v.Val {
 			return true
 		}
 	}
