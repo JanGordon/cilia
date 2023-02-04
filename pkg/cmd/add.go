@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var global bool
-
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Args:  cobra.ExactArgs(1),
@@ -26,6 +24,5 @@ var addCmd = &cobra.Command{
 }
 
 func init() {
-	addCmd.PersistentFlags().BoolVarP(&global, "global", "g", false, "add addon globally")
 	rootCmd.AddCommand(addCmd)
 }

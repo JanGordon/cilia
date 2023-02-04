@@ -12,6 +12,7 @@ var ReservedNames = []string{
 }
 
 var PageMatcher = regexp2.MustCompile("[^/.out/].html$", 0)
+var BuiltPageMatcher = regexp2.MustCompile(".html.out$", 0)
 var ComponentMatcher = regexp2.MustCompile(".cell$", 0)
 var ComponentNameSolver = regexp2.MustCompile(`^.*(?=(\.cell))`, 0)
 
