@@ -21,7 +21,7 @@ func AssembleDom(document *page.Page, root bool, ssr bool) *page.Page {
 	if err != nil {
 		panic(err)
 	}
-	document.Dom.Node = newNode.LastChild.LastChild
+	document.Dom.Node = newNode.LastChild
 	for _, i := range page.GetAllDescendants(document.Dom.Node) {
 		if i.Type == html.ElementNode {
 			for _, c := range component.Components {

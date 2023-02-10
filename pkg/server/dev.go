@@ -59,6 +59,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		userIP := net.ParseIP(ip)
 		ssredDoc := ssr.Compile(filepath.Dir(url), true, userIP.String()+":"+port) //my compile more than neccecary
 		fmt.Println(ssredDoc[url].Path)
+		os.Remove(ssredDoc[url].Path + ".out")
 
 		writeFile, err := os.OpenFile(ssredDoc[url].Path+".out", os.O_WRONLY|os.O_CREATE, 0600)
 		if err != nil {

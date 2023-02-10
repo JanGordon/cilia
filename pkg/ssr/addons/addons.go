@@ -3,7 +3,6 @@ package addons
 import (
 	"fmt"
 
-	wasmer "github.com/wasmerio/wasmer-go/wasmer"
 	"rogchap.com/v8go"
 )
 
@@ -27,14 +26,15 @@ type ExternalAddonCfg struct {
 }
 
 var Addons []*Addon
-var store *wasmer.Store
 
 func initNewAddon(a *Addon) {
 	Addons = append(Addons, a)
 }
 
 func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
+	// svae previos
 	var openTokens []*Addon
+	fmt.Println(page)
 	for c := 1; c < len(page); c += 1 {
 		// check if the sequence fits any addons
 		for _, addon := range Addons {
@@ -58,7 +58,7 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 						t := openTokens[i]
 						t.Open = false
 						t.Content = page[openTokens[i].StartIndex : c-1]
-						fmt.Println("Computing token")
+						fmt.Println("Computing token: ", t.Content)
 
 						//wasm stuff
 						// store := wasmer.NewStore(wasmer.NewEngine())
@@ -85,6 +85,8 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 						modifiedContent := t.ContentModifier(t.Content, ctx)
 						fmt.Println(modifiedContent)
 						page = page[:t.StartIndex-2] + fmt.Sprintf("<%v>%v</%v>", t.Name, modifiedContent, t.Name) + page[c+1:]
+						c += len(modifiedContent)
+						break
 						// need to know if it should be rerun or only ssr
 						// here, convert each token to js but dont run it.
 						// then work out how they fit together so can be run in same context

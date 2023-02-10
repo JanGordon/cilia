@@ -24,6 +24,10 @@ func Compile(path string, isSSR bool, request string) map[string]*page.Page {
 	ssr = isSSR
 	req = request
 	pageMap = make(map[string]*page.Page)
+	if !ssr {
+		prebuiltPages = nil
+		pageMap = nil
+	}
 	component.SyncComponents()
 	filepath.WalkDir(path, processPage)
 	return pageMap
@@ -55,8 +59,8 @@ func processPage(path string, d fs.DirEntry, err error) error {
 		// writeFile, err := os.OpenFile(path+".out", os.O_WRONLY|os.O_CREATE, 0600)
 		// no longer writing to file because of ssr
 		pageBuf := bytes.NewBuffer([]byte{})
-		child := newPage.Dom.Node.FirstChild
-		lastChild := newPage.Dom.Node.LastChild
+		child := newPage.Dom.Node
+		lastChild := newPage.Dom.Node
 		for {
 			if child.Type != html.CommentNode {
 				if err = html.Render(pageBuf, child); err != nil {
