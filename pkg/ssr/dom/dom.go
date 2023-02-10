@@ -112,8 +112,6 @@ func AssembleDom(document *page.Page, root bool, ssr bool) *page.Page {
 						i.AppendChild(v)
 
 					}
-				} else if i.Data == "script" && i.FirstChild != nil {
-					document.Js.Ctx.RunScript(i.FirstChild.Data, "inlinescript")
 				}
 			}
 		}

@@ -18,6 +18,12 @@ type Addon struct {
 	Content         string
 }
 
+type ScriptNode struct {
+	Open       bool
+	Content    string
+	StartIndex int
+}
+
 type ExternalAddonCfg struct {
 	OpeningToken string
 	ClosingToken string
@@ -34,8 +40,23 @@ func initNewAddon(a *Addon) {
 func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 	// svae previos
 	var openTokens []*Addon
+	var ScriptNodes []*ScriptNode
+
 	fmt.Println(page)
 	for c := 1; c < len(page); c += 1 {
+		if c+7 <= len(page) && string(page[c-1:c+7]) == "<script>" {
+			fmt.Println("starting script")
+			ScriptNodes = append(ScriptNodes, &ScriptNode{true, "", c + 7})
+		} else if c+8 <= len(page) && string(page[c-1:c+8]) == "</script>" {
+			for i := len(ScriptNodes) - 1; i >= 0; i-- {
+				if ScriptNodes[i].Open {
+					fmt.Println("running script", page[ScriptNodes[i].StartIndex:c-2])
+					ScriptNodes[i].Open = false
+					ctx.RunScript(page[ScriptNodes[i].StartIndex:c-2], "inlinejsscript.js")
+					break
+				}
+			}
+		}
 		// check if the sequence fits any addons
 		for _, addon := range Addons {
 
