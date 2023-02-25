@@ -3,7 +3,7 @@ instead of building to html.out, cilia build should build the entire binary of t
 > on request the prebuilt page shoud have ssr only parts found and built (this can include addons)
 > 
 
-recursion may be because of passing http/Reuqest around
+/// add component rednering to client side
 
 in routes/api, go files can be placed to handle request and have access to a global map which can save seesions and other thigns required by js.
 this global object is also available in the js only when serve side rendering

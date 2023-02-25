@@ -6,13 +6,17 @@ import (
 	"rogchap.com/v8go"
 )
 
-func jsModifier(c string, ctx v8go.Context) string {
+func jsModifier(c string, ctx v8go.Context, id string) (string, string) {
 	output, err := ctx.RunScript(c, "resultinline.js")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(output.String(), c)
-	return output.String()
+	fmt.Println("Input string: , ", c)
+	return output.String(), ""
+}
+
+func cleanHTML(input string) string {
+	return ""
 }
 
 func init() {

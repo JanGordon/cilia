@@ -3,6 +3,7 @@ package addons
 import (
 	"fmt"
 
+	"github.com/JanGordon/cilia-framework/pkg/page"
 	"rogchap.com/v8go"
 )
 
@@ -11,7 +12,7 @@ type Addon struct {
 	ClosingToken string
 	Name         string
 
-	ContentModifier func(string, v8go.Context) string
+	ContentModifier func(string, v8go.Context, string) (string, string)
 	PureSSR         bool
 	Open            bool
 	StartIndex      int
@@ -37,8 +38,10 @@ func initNewAddon(a *Addon) {
 	Addons = append(Addons, a)
 }
 
-func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
+func ReplaceAddons(document *page.Page, ssr bool, jsFile *page.JsFile) page.Page {
 	// svae previos
+	var page = document.TextContents
+	var ctx = document.Js.Ctx
 	var openTokens []*Addon
 	var ScriptNodes []*ScriptNode
 
@@ -103,9 +106,14 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 
 						// modifier, err := instance.Exports.GetFunction("Modifier")
 						// check(err)
-						modifiedContent := t.ContentModifier(t.Content, ctx)
-						fmt.Println(modifiedContent)
-						page = page[:t.StartIndex-2] + fmt.Sprintf("<%v>%v</%v>", t.Name, modifiedContent, t.Name) + page[c+1:]
+
+						// make content modifier js so it can be added t opage.Scripts and can be bundled for lcient
+						id := fmt.Sprintf("%v%v", t.Name, i)
+						modifiedContent, script := t.ContentModifier(t.Content, *ctx, id)
+						// document.Script = append(document.Script, script)
+						jsFile.Contents += script
+						fmt.Println("mod", modifiedContent)
+						page = page[:t.StartIndex-2] + fmt.Sprintf("<%v cilia-id='%v'>%v</%v>", t.Name, id, modifiedContent, t.Name) + page[c+1:]
 						c += len(modifiedContent)
 						break
 						// need to know if it should be rerun or only ssr
@@ -117,7 +125,8 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 			}
 		}
 	}
-	return page
+	document.TextContents = page
+	return *document
 }
 
 type config struct {

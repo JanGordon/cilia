@@ -25,11 +25,13 @@ func Compile(path string, isSSR bool, request string) map[string]*page.Page {
 	req = request
 	pageMap = make(map[string]*page.Page)
 	if !ssr {
-		prebuiltPages = nil
+		fmt.Println("Rmemoving prebuilt pages")
+		// prebuiltPages = nil
 		pageMap = nil
 	}
 	component.SyncComponents()
 	filepath.WalkDir(path, processPage)
+	fmt.Println(pageMap)
 	return pageMap
 }
 
@@ -41,7 +43,9 @@ func processPage(path string, d fs.DirEntry, err error) error {
 	if !d.IsDir() && isPage {
 		var newPage page.Page
 		if ssr {
+			fmt.Println(prebuiltPages, path)
 			newPage = *getPageFromPath(path, prebuiltPages)
+			fmt.Printf(newPage.TextContents)
 			newPage.Js.Ctx.RunScript(fmt.Sprintf("var REQ = '%v'", req), "request.js")
 
 		} else {
@@ -55,9 +59,22 @@ func processPage(path string, d fs.DirEntry, err error) error {
 
 		}
 		// js.RunJS(&newPage)
-		newPage = *dom.AssembleDom(&newPage, true, ssr)
+		jsfile := page.JsFile{Contents: "", PathOfRoute: path}
+		newPage = *dom.AssembleDom(&newPage, true, ssr, &jsfile)
 		// writeFile, err := os.OpenFile(path+".out", os.O_WRONLY|os.O_CREATE, 0600)
 		// no longer writing to file because of ssr
+		if ssr {
+			scriptNode := &html.Node{
+				Data: "script",
+				Type: html.ElementNode,
+			}
+			scriptNode.AppendChild(&html.Node{
+				Data: jsfile.Contents,
+				Type: html.TextNode,
+			})
+			newPage.Dom.Node.LastChild.AppendChild(scriptNode)
+
+		}
 		pageBuf := bytes.NewBuffer([]byte{})
 		child := newPage.Dom.Node
 		lastChild := newPage.Dom.Node
@@ -78,6 +95,7 @@ func processPage(path string, d fs.DirEntry, err error) error {
 		if ssr {
 			pageMap[path+".out"] = &newPage
 		} else {
+			fmt.Println("adding prebuilt page........")
 			prebuiltPages = append(prebuiltPages, &newPage)
 		}
 	}

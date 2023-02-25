@@ -15,8 +15,9 @@ import (
 	"rogchap.com/v8go"
 )
 
-func AssembleDom(document *page.Page, root bool, ssr bool) *page.Page {
-	document.TextContents = addons.ReplaceAddons(document.TextContents, *document.Js.Ctx, ssr)
+func AssembleDom(document *page.Page, root bool, ssr bool, jsFile *page.JsFile) *page.Page {
+	newDocument := addons.ReplaceAddons(document, ssr, jsFile)
+	document = &newDocument
 	newNode, err := html.Parse(strings.NewReader(document.TextContents))
 	if err != nil {
 		panic(err)
@@ -87,7 +88,7 @@ func AssembleDom(document *page.Page, root bool, ssr bool) *page.Page {
 					funcName := strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
 					// before we run the generator we need to make sure there are no other components to have a genertor made for them
 					jsCtx := v8go.NewContext()
-					newDocument := AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nodes.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false, ssr)
+					newDocument := AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nodes.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false, ssr, jsFile)
 
 					// we need to render the output as a string to pass to the js:
 					var bytesOfComponent = bytes.NewBuffer([]byte{})
@@ -106,7 +107,7 @@ func AssembleDom(document *page.Page, root bool, ssr bool) *page.Page {
 					// fmt.Println(componentHTML)
 					// need to rerun assemble dom to mkae sure all returned components are resolved
 
-					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers}, false, ssr)
+					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers}, false, ssr, jsFile)
 					// for _, v := range page.GetAllDescendants(newDocument.Dom.Node) {
 					// 	fmt.Println("nodes in compoentn: ", v.Data)
 

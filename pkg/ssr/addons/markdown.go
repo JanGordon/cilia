@@ -5,10 +5,10 @@ import (
 	"rogchap.com/v8go"
 )
 
-func markdownModifier(c string, context v8go.Context) string {
+func markdownModifier(c string, context v8go.Context, id string) (string, string) {
 	md := []byte(c)
 	output := markdown.ToHTML(md, nil, nil)
-	return string(output)
+	return string(output), ""
 }
 
 func init() {

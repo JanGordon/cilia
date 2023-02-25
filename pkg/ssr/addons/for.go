@@ -7,14 +7,15 @@ import (
 	"rogchap.com/v8go"
 )
 
-func forModifier(c string, ctx v8go.Context) string {
-	ctx.RunScript(fmt.Sprintf("var forresult = '';%v{forresult+='%v'}", strings.Split(c, "\n")[0], strings.Replace(c, strings.Split(c, "\n")[0], "", 1)), "inlineforloop.js")
+func forModifier(c string, ctx v8go.Context, id string) (string, string) {
+	script := fmt.Sprintf("var forresult = '';%v{forresult+='%v'}", strings.Split(c, "\n")[0], strings.Replace(c, strings.Split(c, "\n")[0], "", 1))
+	ctx.RunScript(script, "inlineforloop.js")
 	forresult, err := ctx.RunScript("forresult", "forresult.js")
 	if err != nil {
 		panic(err)
 	}
-
-	return forresult.String()
+	fmt.Println("There si  afro loop")
+	return forresult.String(), fmt.Sprintf("{document.getElementById('%v').addEventListener('click', function (e) {%vdocument.getElementById('%v').innerText=forresult})}", id, script, id)
 }
 
 func init() {

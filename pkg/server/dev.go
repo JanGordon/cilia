@@ -22,12 +22,12 @@ var wConn = 0
 var reloadCount = 0
 
 func Dev(port int) {
+	ssr.Compile(global.ProjectRoot, false, "")
 	go fileWatcher()
 	server := &http.Server{Addr: fmt.Sprintf(":%v", port)}
 	http.HandleFunc("/ws", wsUpgrader)
 	http.HandleFunc("/", handler)
 	done := make(chan bool)
-	ssr.Compile(global.ProjectRoot, false, "")
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
