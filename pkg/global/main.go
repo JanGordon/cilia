@@ -1,6 +1,7 @@
 package global
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/dlclark/regexp2"
@@ -17,6 +18,8 @@ var ComponentMatcher = regexp2.MustCompile(".cell$", 0)
 var ComponentNameSolver = regexp2.MustCompile(`^.*(?=(\.cell))`, 0)
 
 var ProjectRoot, _ = os.Getwd()
+
+var Server *http.Server
 
 var ComponentContext = v8go.NewContext()
 

@@ -20,18 +20,18 @@ var req string
 var prebuiltPages []*page.Page
 var pageMap map[string]*page.Page
 
-func Compile(path string, isSSR bool, request string) map[string]*page.Page {
+func Compile(path string, isSSR bool, request string, json string) map[string]*page.Page {
+	fmt.Println("Started compile", isSSR)
 	ssr = isSSR
 	req = request
 	pageMap = make(map[string]*page.Page)
 	if !ssr {
-		fmt.Println("Rmemoving prebuilt pages")
-		// prebuiltPages = nil
+		prebuiltPages = nil
 		pageMap = nil
 	}
 	component.SyncComponents()
 	filepath.WalkDir(path, processPage)
-	fmt.Println(pageMap)
+	fmt.Println("ended compile succesfully", isSSR)
 	return pageMap
 }
 
@@ -43,9 +43,7 @@ func processPage(path string, d fs.DirEntry, err error) error {
 	if !d.IsDir() && isPage {
 		var newPage page.Page
 		if ssr {
-			fmt.Println(prebuiltPages, path)
 			newPage = *getPageFromPath(path, prebuiltPages)
-			fmt.Printf(newPage.TextContents)
 			newPage.Js.Ctx.RunScript(fmt.Sprintf("var REQ = '%v'", req), "request.js")
 
 		} else {
@@ -101,6 +99,11 @@ func processPage(path string, d fs.DirEntry, err error) error {
 	}
 
 	return nil
+}
+
+func FlushCache() {
+	prebuiltPages = nil
+	pageMap = nil
 }
 
 func getPageFromPath(path string, pages []*page.Page) *page.Page {

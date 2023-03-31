@@ -22,11 +22,13 @@ var wConn = 0
 var reloadCount = 0
 
 func Dev(port int) {
-	ssr.Compile(global.ProjectRoot, false, "")
+	ssr.Compile(global.ProjectRoot, false, "", "")
 	go fileWatcher()
 	server := &http.Server{Addr: fmt.Sprintf(":%v", port)}
+
 	http.HandleFunc("/ws", wsUpgrader)
 	http.HandleFunc("/", handler)
+	global.Server = server
 	done := make(chan bool)
 	go func() {
 		err := server.ListenAndServe()
@@ -42,13 +44,18 @@ func Dev(port int) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	url := url.ResolveURL(r.URL.Path)
-	fmt.Println("expain this", r.UserAgent())
+	if _, err := os.Stat(url); err != nil {
+		w.Write([]byte("404: page not found"))
+		return
+	}
 	isHTML, err := global.BuiltPageMatcher.MatchString(url)
 	if err != nil {
 		panic(err)
 	}
 	if isHTML {
-		fmt.Println("ssr happening")
+		ssr.FlushCache()
+		ssr.Compile(global.ProjectRoot, false, "", "")
+
 		ip, port, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
@@ -57,8 +64,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userIP := net.ParseIP(ip)
-		ssredDoc := ssr.Compile(filepath.Dir(url), true, userIP.String()+":"+port) //my compile more than neccecary
-		fmt.Println(ssredDoc[url].Path)
+		ssredDoc := ssr.Compile(filepath.Dir(url), true, userIP.String()+":"+port, "") //my compile more than neccecary
 		os.Remove(ssredDoc[url].Path + ".out")
 
 		writeFile, err := os.OpenFile(ssredDoc[url].Path+".out", os.O_WRONLY|os.O_CREATE, 0600)
@@ -66,11 +72,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		writeFile.Write([]byte(ssredDoc[url].TextContents))
-		fmt.Println(ssredDoc)
 	}
 	http.ServeFile(w, r, url)
 
-	fmt.Println("ssr done")
 }
 
 func fileWatcher() {
@@ -104,8 +108,11 @@ func fileWatcher() {
 					// if filepath.Ext(event.Name) == ".html" {
 					// 	ssr.Compile()
 					// 	reloadIndicator <- "reload" //temporarliy disable html reload
-					// } else {
-					ssr.Compile(global.ProjectRoot, false, "")
+					// } else {s
+					//remove ths because of overlaps wiht ssr compile
+					// ssr.FlushCache()
+					// ssr.Compile(global.ProjectRoot, false, "", "")
+					// fmt.Println("haent finsihed compile yet")
 					reloadIndicator <- "reload"
 					// }
 
@@ -146,7 +153,6 @@ func wsUpgrader(w http.ResponseWriter, r *http.Request) {
 		if r == "reload" || r == "reloadhtml" {
 			// reloadIndicator <- false
 			message := []byte(r)
-			fmt.Println(r)
 			err = conn.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				log.Println("write failed:", err)
