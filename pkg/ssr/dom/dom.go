@@ -11,6 +11,7 @@ import (
 	"github.com/JanGordon/cilia-framework/pkg/global"
 	"github.com/JanGordon/cilia-framework/pkg/page"
 	"github.com/JanGordon/cilia-framework/pkg/ssr/addons"
+	"github.com/JanGordon/cilia-framework/pkg/url"
 	"golang.org/x/net/html"
 	"rogchap.com/v8go"
 )
@@ -88,7 +89,7 @@ func AssembleDom(document *page.Page, root bool, ssr bool, jsFile *page.JsFile) 
 					funcName := strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
 					// before we run the generator we need to make sure there are no other components to have a genertor made for them
 					jsCtx := v8go.NewContext()
-					newDocument := AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nodes.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers}, false, ssr, jsFile)
+					newDocument := AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nodes.LastChild.LastChild}, TextContents: string(fileText), Path: c.Path, AllUsers: c.AllUsers, ExternalScripts: document.ExternalScripts}, false, ssr, jsFile)
 
 					// we need to render the output as a string to pass to the js:
 					var bytesOfComponent = bytes.NewBuffer([]byte{})
@@ -107,7 +108,7 @@ func AssembleDom(document *page.Page, root bool, ssr bool, jsFile *page.JsFile) 
 					// fmt.Println(componentHTML)
 					// need to rerun assemble dom to mkae sure all returned components are resolved
 
-					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers}, false, ssr, jsFile)
+					newDocument = AssembleDom(&page.Page{Js: page.JsContext{Path: c.Path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: componentHTML.String(), Path: c.Path, AllUsers: c.AllUsers, ExternalScripts: document.ExternalScripts}, false, ssr, jsFile)
 					// for _, v := range page.GetAllDescendants(newDocument.Dom.Node) {
 					// 	fmt.Println("nodes in compoentn: ", v.Data)
 
@@ -117,6 +118,18 @@ func AssembleDom(document *page.Page, root bool, ssr bool, jsFile *page.JsFile) 
 						i.AppendChild(v)
 
 					}
+				} else if i.Data == "script" && hasAttribute("src", "*", i) {
+					scriptPath, err := url.ResolvePath(getAttribute("src", i), document.Path)
+					if err != nil {
+						panic(fmt.Sprintf("could not resolve path: %v", getAttribute("src", i)))
+					}
+					fmt.Println("Docuemtn paht", document.ExternalScripts, scriptPath)
+					if document.ExternalScripts == nil {
+						externScript := []string{}
+						document.ExternalScripts = &externScript
+					}
+					f := append(*document.ExternalScripts, scriptPath)
+					document.ExternalScripts = &f
 				}
 			}
 		}
@@ -135,11 +148,22 @@ func stringInSlice(s string, slice []string) bool {
 
 func hasAttribute(attr string, val string, node *html.Node) bool {
 	for _, v := range node.Attr {
-		if attr == v.Key && val == v.Val {
-			return true
+		if attr == v.Key {
+			if val == v.Val || val == "*" {
+				return true
+			}
 		}
 	}
 	return false
+}
+
+func getAttribute(attr string, node *html.Node) string {
+	for _, v := range node.Attr {
+		if attr == v.Key {
+			return v.Val
+		}
+	}
+	return ""
 }
 
 func getComponentArgs(s string) []string {

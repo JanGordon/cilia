@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/dlclark/regexp2 v1.7.0
+	github.com/evanw/esbuild v0.17.14
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gomarkdown/markdown v0.0.0-20221013030248-663e2500819c
 	github.com/gorilla/websocket v1.5.0
