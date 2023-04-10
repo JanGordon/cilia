@@ -3,7 +3,7 @@ package addons
 import (
 	"fmt"
 
-	wasmer "github.com/wasmerio/wasmer-go/wasmer"
+	"github.com/JanGordon/cilia-framework/pkg/page"
 	"rogchap.com/v8go"
 )
 
@@ -12,11 +12,17 @@ type Addon struct {
 	ClosingToken string
 	Name         string
 
-	ContentModifier func(string, v8go.Context) string
+	ContentModifier func(string, v8go.Context, string) (string, string)
 	PureSSR         bool
 	Open            bool
 	StartIndex      int
 	Content         string
+}
+
+type ScriptNode struct {
+	Open       bool
+	Content    string
+	StartIndex int
 }
 
 type ExternalAddonCfg struct {
@@ -27,15 +33,33 @@ type ExternalAddonCfg struct {
 }
 
 var Addons []*Addon
-var store *wasmer.Store
 
 func initNewAddon(a *Addon) {
 	Addons = append(Addons, a)
 }
 
-func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
+func ReplaceAddons(document *page.Page, ssr bool, jsFile *page.JsFile) page.Page {
+	// svae previos
+	var page = document.TextContents
+	var ctx = document.Js.Ctx
 	var openTokens []*Addon
+	var ScriptNodes []*ScriptNode
+
+	fmt.Println(page)
 	for c := 1; c < len(page); c += 1 {
+		if c+7 <= len(page) && string(page[c-1:c+7]) == "<script>" {
+			fmt.Println("starting script")
+			ScriptNodes = append(ScriptNodes, &ScriptNode{true, "", c + 7})
+		} else if c+8 <= len(page) && string(page[c-1:c+8]) == "</script>" {
+			for i := len(ScriptNodes) - 1; i >= 0; i-- {
+				if ScriptNodes[i].Open {
+					fmt.Println("running script", page[ScriptNodes[i].StartIndex:c-2])
+					ScriptNodes[i].Open = false
+					ctx.RunScript(page[ScriptNodes[i].StartIndex:c-2], "inlinejsscript.js")
+					break
+				}
+			}
+		}
 		// check if the sequence fits any addons
 		for _, addon := range Addons {
 
@@ -58,7 +82,7 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 						t := openTokens[i]
 						t.Open = false
 						t.Content = page[openTokens[i].StartIndex : c-1]
-						fmt.Println("Computing token")
+						fmt.Println("Computing token: ", t.Content)
 
 						//wasm stuff
 						// store := wasmer.NewStore(wasmer.NewEngine())
@@ -82,9 +106,16 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 
 						// modifier, err := instance.Exports.GetFunction("Modifier")
 						// check(err)
-						modifiedContent := t.ContentModifier(t.Content, ctx)
-						fmt.Println(modifiedContent)
-						page = page[:t.StartIndex-2] + fmt.Sprintf("<%v>%v</%v>", t.Name, modifiedContent, t.Name) + page[c+1:]
+
+						// make content modifier js so it can be added t opage.Scripts and can be bundled for lcient
+						id := fmt.Sprintf("%v%v", t.Name, i)
+						modifiedContent, script := t.ContentModifier(t.Content, *ctx, id)
+						// document.Script = append(document.Script, script)
+						jsFile.Contents += script
+						fmt.Println("mod", modifiedContent)
+						page = page[:t.StartIndex-2] + fmt.Sprintf("<%v cilia-id='%v'>%v</%v>", t.Name, id, modifiedContent, t.Name) + page[c+1:]
+						c += len(modifiedContent)
+						break
 						// need to know if it should be rerun or only ssr
 						// here, convert each token to js but dont run it.
 						// then work out how they fit together so can be run in same context
@@ -94,7 +125,8 @@ func ReplaceAddons(page string, ctx v8go.Context, ssr bool) string {
 			}
 		}
 	}
-	return page
+	document.TextContents = page
+	return *document
 }
 
 type config struct {

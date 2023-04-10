@@ -7,4 +7,9 @@ type JsContext struct {
 	Ctx  *v8go.Context
 }
 
+type JsFile struct {
+	Contents    string
+	PathOfRoute string
+}
+
 var Ctxs []JsContext

@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/JanGordon/cilia-framework/pkg/global"
 	"github.com/JanGordon/cilia-framework/pkg/ssr"
 	"github.com/JanGordon/cilia-framework/pkg/url"
+	"github.com/evanw/esbuild/pkg/api"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/websocket"
 )
@@ -22,12 +24,14 @@ var wConn = 0
 var reloadCount = 0
 
 func Dev(port int) {
+	ssr.Compile(global.ProjectRoot, false, "", "")
 	go fileWatcher()
 	server := &http.Server{Addr: fmt.Sprintf(":%v", port)}
+
 	http.HandleFunc("/ws", wsUpgrader)
 	http.HandleFunc("/", handler)
+	global.Server = server
 	done := make(chan bool)
-	ssr.Compile(global.ProjectRoot, false, "")
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
@@ -42,13 +46,18 @@ func Dev(port int) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	url := url.ResolveURL(r.URL.Path)
-	fmt.Println("expain this", r.UserAgent())
+	if _, err := os.Stat(url); err != nil {
+		w.Write([]byte("404: page not found"))
+		return
+	}
 	isHTML, err := global.BuiltPageMatcher.MatchString(url)
 	if err != nil {
 		panic(err)
 	}
 	if isHTML {
-		fmt.Println("ssr happening")
+		ssr.FlushCache()
+		ssr.Compile(global.ProjectRoot, false, "", "")
+
 		ip, port, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
@@ -57,19 +66,39 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userIP := net.ParseIP(ip)
-		ssredDoc := ssr.Compile(filepath.Dir(url), true, userIP.String()+":"+port) //my compile more than neccecary
-		fmt.Println(ssredDoc[url].Path)
+		ssredDoc := ssr.Compile(filepath.Dir(url), true, userIP.String()+":"+port, "") //my compile more than neccecary
+
+		os.Remove(ssredDoc[url].Path + ".out")
 
 		writeFile, err := os.OpenFile(ssredDoc[url].Path+".out", os.O_WRONLY|os.O_CREATE, 0600)
 		if err != nil {
 			panic(err)
 		}
 		writeFile.Write([]byte(ssredDoc[url].TextContents))
-		fmt.Println(ssredDoc)
 	}
-	http.ServeFile(w, r, url)
+	filename := strings.Split(url, "/")
 
-	fmt.Println("ssr done")
+	//before we bundl js we need to make sure it is actually used.
+	if strings.HasSuffix(url, "js") || strings.HasSuffix(url, "ts") {
+		result := api.Build(api.BuildOptions{
+			EntryPoints:      []string{url},
+			Bundle:           true,
+			Write:            true,
+			Outfile:          url + ".out.js",
+			MinifyWhitespace: true,
+			// MinifyIdentifiers: true,
+			MinifySyntax: true,
+		})
+
+		if len(result.Errors) != 0 {
+			panic(fmt.Errorf("error in file: %v: %v", filename[len(filename)-1], result.Errors))
+		}
+		http.ServeFile(w, r, url+".out.js")
+	} else {
+		http.ServeFile(w, r, url)
+
+	}
+
 }
 
 func fileWatcher() {
@@ -98,13 +127,17 @@ func fileWatcher() {
 					return
 				}
 				// fmt.Println(event)
-				if filepath.Ext(event.Name) != ".out" {
+				if filepath.Ext(event.Name) != ".out" && !strings.HasSuffix(event.Name, ".out.js") {
 					// if html only that should be reloaded on page (with js)
 					// if filepath.Ext(event.Name) == ".html" {
 					// 	ssr.Compile()
 					// 	reloadIndicator <- "reload" //temporarliy disable html reload
-					// } else {
-					ssr.Compile(global.ProjectRoot, false, "")
+					// } else {s
+					//remove ths because of overlaps wiht ssr compile
+					// ssr.FlushCache()
+					// ssr.Compile(global.ProjectRoot, false, "", "")
+					// fmt.Println("haent finsihed compile yet")
+					fmt.Println("Evbent name:", event.Name)
 					reloadIndicator <- "reload"
 					// }
 
@@ -145,7 +178,6 @@ func wsUpgrader(w http.ResponseWriter, r *http.Request) {
 		if r == "reload" || r == "reloadhtml" {
 			// reloadIndicator <- false
 			message := []byte(r)
-			fmt.Println(r)
 			err = conn.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				log.Println("write failed:", err)
@@ -169,4 +201,21 @@ func wsUpgrader(w http.ResponseWriter, r *http.Request) {
 
 	}
 	fmt.Println("client disconnected")
+}
+
+func mergeBundlableScripts(new []string, old []string) {
+	for _, newScript := range new {
+		if !stringInSlice(newScript, old) {
+			old = append(old, newScript)
+		}
+	}
+}
+
+func stringInSlice(s string, slice []string) bool {
+	for _, v := range slice {
+		if s == v {
+			return true
+		}
+	}
+	return false
 }

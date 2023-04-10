@@ -13,7 +13,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// fmt.Println(url.ResolvePath("./go.mod", "/rotes/hi"))
 		// ssr.Compile()
-		fmt.Println("v0.0.1")
+		fmt.Println("v0.0.2")
 
 	},
 }
