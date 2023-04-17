@@ -51,7 +51,7 @@ func processPage(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				panic(err)
 			}
-			jsCtx := v8go.NewContext()
+			jsCtx := v8go.NewContext(global.GlobalIsolate)
 			newPage = page.Page{Js: page.JsContext{Path: path, Ctx: jsCtx}, Dom: page.DomContext{Node: nil}, TextContents: string(b), Path: path}
 			newPage.Js.Ctx.RunScript(fmt.Sprintf("var REQ = 'this is not ssr'", req), "requestdef.js")
 
@@ -88,7 +88,9 @@ func processPage(path string, d fs.DirEntry, err error) error {
 				break
 			}
 		}
-
+		// now the page has run its server side rendering
+		// we run preact ssr
+		// preactRender(pageBuf)
 		newPage.TextContents = pageBuf.String()
 		if ssr {
 			pageMap[path+".out"] = &newPage
@@ -99,6 +101,25 @@ func processPage(path string, d fs.DirEntry, err error) error {
 	}
 
 	return nil
+}
+
+func preactRender(page *bytes.Buffer) {
+	preactSSRContext := v8go.NewContext(global.GlobalIsolate)
+	window := preactSSRContext.Global()
+	window.Set("pageString", page.String())
+	if global.SSRScript != "" {
+		fmt.Println("Found embeded script!!")
+		preactSSRContext.RunScript(global.SSRScript, "ssrscript.js")
+	} else {
+		// probably running with go run main.go
+		file, err := os.ReadFile(global.SSRScriptPath)
+		if err != nil {
+			panic(fmt.Errorf("%v, either incorrectly built (use the script on github) or the ssr script has moved", err))
+		}
+		preactSSRContext.RunScript(string(file), "ssrscript.js")
+		fmt.Println("didnt find ebebed script")
+
+	}
 }
 
 func FlushCache() {

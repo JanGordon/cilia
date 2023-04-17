@@ -23,7 +23,7 @@ func init() {
 		"{.", ".}", // opening and closing token
 		"for",       // name needs to be unique and not match any normal html
 		forModifier, // golang modifier or can just run js version
-		true,        // purely ssr               // if former false, js to run on update
+		false,       // purely ssr               // if former false, js to run on update
 		true,        // should alywas be true
 		0,           //should always be 0
 		"",          //should always be ""

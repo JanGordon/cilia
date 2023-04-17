@@ -21,7 +21,13 @@ var ProjectRoot, _ = os.Getwd()
 
 var Server *http.Server
 
-var ComponentContext = v8go.NewContext()
+var GlobalIsolate = v8go.NewIsolate()
+
+var ComponentContext = v8go.NewContext(GlobalIsolate)
+
+var SSRScriptPath = "./pkg/ssr/preactssr.js"
+
+var SSRScript = ""
 
 // func ErrorCheck() {
 // 	if err != nil {

@@ -68,6 +68,8 @@ func ReplaceAddons(document *page.Page, ssr bool, jsFile *page.JsFile) page.Page
 				newToken := *addon
 				newToken.StartIndex = c + 1
 				openTokens = append(openTokens, &newToken)
+				fmt.Println("found match")
+
 			} else if string(page[c-1])+string(page[c]) == addon.ClosingToken {
 				// found a closing token
 				fmt.Println("FOund a closing token!!!!!")

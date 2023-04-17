@@ -1,2 +1,4 @@
-go build ./main.go
-sudo mv ./main /usr/bin/cilia
+#!/bin/bash
+# SSRScript=$(cat ./pkg/ssr/preactssr.js)
+go build 
+sudo mv ./cilia-framework /usr/bin/cilia
